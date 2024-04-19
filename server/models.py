@@ -21,7 +21,15 @@ class Restaurant(db.Model, SerializerMixin):
     address = db.Column(db.String)
 
     # add relationship
+    restaurantpizzas = db.relationship('RestaurantPizza', back_populates='restaurant', cascade='all, delete-orphan')
 
+
+    @validates('name')
+    def validate_name(self,key,  name):
+        if len(name.strip()) > 50:
+            raise ValueError("Restaurant name must be less than 50 characters")
+        return name
+    
     # add serialization rules
 
     def __repr__(self):
@@ -36,6 +44,7 @@ class Pizza(db.Model, SerializerMixin):
     ingredients = db.Column(db.String)
 
     # add relationship
+    restaurantpizzas = db.relationship('RestaurantPizza', back_populates='pizza', lazy=True)
 
     # add serialization rules
 
@@ -49,11 +58,21 @@ class RestaurantPizza(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     price = db.Column(db.Integer, nullable=False)
 
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
+    pizza_id = db.Column(db.Integer, db.ForeignKey('pizzas.id'), nullable=False)
+
     # add relationships
+    restaurant = db.relationship('Restaurant', back_populates='restaurantpizzas')
+    pizza = db.relationship('Pizza', back_populates='restaurantpizzas')
 
     # add serialization rules
 
     # add validation
+    @validates('price')
+    def validate_price(self, key, price):
+        if not 1 <= price <= 30:
+            raise ValueError("Price must be between 1 and 30")
+        return price
 
     def __repr__(self):
         return f"<RestaurantPizza ${self.price}>"
